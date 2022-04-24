@@ -1,0 +1,35 @@
+steam_api64.dll
+steam_appid.txt
+ProjectSettings/
+Temp/
+UnityPackageManager/
+Library/
+build/
+Assets/*
+
+!Assets/Editor.meta
+!Assets/Editor/
+Assets/Editor/*
+!Assets/Editor/Resources.meta
+!Assets/Editor/Resources/
+
+Manual/Template Manual.html
+Manual/css/
+Manual/font/
+Manual/img/*
+!Manual/img/Component/
+Manual/img/Component/Module Name.svg
+Manual/img/Component/Memory.svg
+Manual/js/*
+Manual/pdfs/*
+
+Assembly-CSharp*
+/*.sln
+obj/
+Models/*
+
+# Binary Memory
+!Assets/BinaryMemory.meta
+!Assets/BinaryMemory/
+!Manual/img/Binary Memory/
+!Manual/js/Binary Memory/
