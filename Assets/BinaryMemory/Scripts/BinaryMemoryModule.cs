@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using KeepCoding;
 using KModkit;
 
 public class BinaryMemoryModule : ModuleScript {
-	private const int MAX_STAGES_COUNT = 69;
+	private const int MAX_STAGES_COUNT = 45;
+	private const int MAX_SOLVING_SOUNDS = 10;
 	private const float KEYS_INTERVAL = 0.0289378f;
 	private const float LEDS_INTERVAL = 0.018f;
 	private const float SOLVING_ANIMATION_DURATION = 2f;
@@ -14,6 +16,8 @@ public class BinaryMemoryModule : ModuleScript {
 	private readonly Color COLOR_1 = new Color(1f, 0f, 0f, 0.8f);
 	private readonly Color COLOR_2 = new Color(0f, 1f, 0f, 0.8f);
 	private readonly Color COLOR_SOLVE = Color.green;
+
+	public readonly string TwitchHelpMessage = "\"!{0} 1234\" - Press buttons";
 
 	public Transform KeysContainer;
 	public Transform LEDsContainer;
@@ -32,7 +36,7 @@ public class BinaryMemoryModule : ModuleScript {
 	private int _passedStagesCount = -1;
 	private int _recoveryStreak;
 	private int _recoveryLastPress;
-	private float _solvingAnimationStartingTime;
+	private float _solvingAnimationStartingTime = -1;
 	private bool[] _recoveryPressed;
 	private bool[] _recoveryLastValue;
 	private int[] _expectedAnswer;
@@ -66,7 +70,6 @@ public class BinaryMemoryModule : ModuleScript {
 			leds.Add(led);
 		}
 		_leds = leds.ToArray();
-		Display.color = COLOR_0;
 	}
 
 	public override void OnActivate() {
@@ -159,18 +162,37 @@ public class BinaryMemoryModule : ModuleScript {
 		}
 	}
 
+	public IEnumerator ProcessTwitchCommand(string command) {
+		command = command.ToLower().Trim();
+		if (command.StartsWith("press ")) command = command.Skip(6).Join("").Trim();
+		command = command.Split(' ').Where(s => s.Length > 0).Join("");
+		if (!Regex.IsMatch(command, @"^[1-4]+$")) yield break;
+		yield return null;
+		yield return command.Select(c => _buttons[c - '1'].Selectable).ToArray();
+		if (_solvingAnimationStartingTime >= 0) yield return string.Format("awardpoints {0}", _stages.Length / 2);
+	}
+
 	private IEnumerator StartSolvingAnimation() {
 		_solvingAnimationStartingTime = Time.time;
 		int prevStageIndex = -1;
+		int playedSounds = -1;
+		bool independedSounds = _stages.Length > MAX_SOLVING_SOUNDS;
 		while (true) {
 			float timeDiff = Time.time - _solvingAnimationStartingTime;
 			int stageIndex = Mathf.FloorToInt(_stages.Length * timeDiff / SOLVING_ANIMATION_DURATION);
 			if (stageIndex >= _stages.Length) break;
 			if (prevStageIndex != stageIndex) {
-				Audio.PlaySoundAtTransform("SolvingSound", transform);
+				if (!independedSounds) Audio.PlaySoundAtTransform("SolvingSound", transform);
 				prevStageIndex = stageIndex;
 				Display.text = (stageIndex + 1).ToString();
 				Display.color = _stages[stageIndex] ? COLOR_2 : COLOR_1;
+			}
+			if (independedSounds) {
+				int soundsToPlay = Mathf.FloorToInt(MAX_SOLVING_SOUNDS * timeDiff / SOLVING_ANIMATION_DURATION);
+				if (playedSounds < soundsToPlay) {
+					Audio.PlaySoundAtTransform("SolvingSound", transform);
+					playedSounds = soundsToPlay;
+				}
 			}
 			yield return null;
 		}
@@ -178,6 +200,12 @@ public class BinaryMemoryModule : ModuleScript {
 		Solve();
 		Display.text = "GG";
 		Display.color = COLOR_SOLVE;
+	}
+
+	private void TwitchHandleForcedSolve() {
+		Log("Module was force-solved");
+		Mode = 5;
+		StartCoroutine(StartSolvingAnimation());
 	}
 
 	private void StartSubmitMode() {

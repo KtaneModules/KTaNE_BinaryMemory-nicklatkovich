@@ -14,7 +14,15 @@ MonoBehaviour:
   id: binary_memory
   title: Binary Memory
   author: NickLatkovich
-  description: 
-  version: 0.1.0
+  description: 'In order not to forget anything, you need to remember nothing. Unfortunately,
+    this will lead to an explosion.
+
+
+    Semi-Boss
+
+    + Rule Seed
+
+    + Twitch Plays'
+  version: 1.0.0
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: c936879ae27117f40b21d0f0d9067828, type: 3}
